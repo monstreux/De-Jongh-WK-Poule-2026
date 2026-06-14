@@ -96,6 +96,13 @@
   .mm-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mm-t.mm-win{font-weight:800}
   .mm-loc{flex:1 1 0;min-width:0;text-align:center;font-size:12px;color:var(--muted);font-weight:600;line-height:1.3}
+  .mm-num{font-size:11px;color:var(--green);font-weight:800;margin-bottom:1px}
+  .sect{margin-bottom:14px}
+  .sect-head{font-family:var(--display);font-size:17px;color:#fff;padding:9px 14px;border-radius:14px 14px 0 0;letter-spacing:.5px}
+  .sect.vooruit .sect-head{background:linear-gradient(90deg,#0B6E4F,#159E6B)}
+  .sect.terug .sect-head{background:linear-gradient(90deg,#586660,#828F86)}
+  .sect .card{margin-bottom:0;border-radius:0 0 14px 14px}
+  .sub-day{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:9px 2px 2px}
   .mm-right{flex:0 0 auto;text-align:right;min-width:64px}
   .mm-time{font-family:var(--display);font-size:23px;color:var(--orange);line-height:1}
   .mm-score{font-family:var(--display);font-size:24px;color:var(--green);line-height:1}
@@ -305,13 +312,22 @@ function loc(m){
   const land=STAD_LAND[norm(stad)];
   return land?`${stad} (${land})`:m.ground;
 }
+function cdText(ts){
+  const diff=ts-Date.now();
+  if(diff<=0) return diff>-2.75*3600000 ? "bezig" : "afgelopen";
+  const totMin=Math.floor(diff/60000);
+  if(totMin<1) return "begint zo";
+  const h=Math.floor(totMin/60), mn=totMin%60;
+  if(h>=1) return mn ? `over ${h} uur ${mn} min` : `over ${h} uur`;
+  return `over ${mn} min`;
+}
 function countdown(m){
   const d=koDate2(m); if(!d) return "";
-  const diff=d.getTime()-Date.now();
-  if(diff<=0) return "begonnen";
-  const h=Math.floor(diff/3600000);
-  if(h>=1) return `over ${h} uur`;
-  return `over ${Math.round(diff/60000)} min`;
+  const ts=d.getTime();
+  return `<span class="cd" data-ko="${ts}">${cdText(ts)}</span>`;
+}
+function tickCountdowns(){
+  document.querySelectorAll(".cd").forEach(el=>{ el.textContent=cdText(+el.dataset.ko); });
 }
 function miniMatch(m,opt){
   opt=opt||{};
@@ -328,9 +344,10 @@ function miniMatch(m,opt){
     right=`<div class="mm-time">${koClock(m)}</div>${cd?`<div class="mm-sub">${cd}</div>`:""}`;
   }
   const L=loc(m);
+  const mid=`${opt.num&&m.num?`<div class="mm-num">wd ${m.num}</div>`:""}${L?`<div>📍 ${L}</div>`:""}`;
   return `<div class="mmatch">
     <div class="mm-teams"><div class="mm-t ${w1?'mm-win':''}">${teamCell(m.team1)}</div><div class="mm-t ${w2?'mm-win':''}">${teamCell(m.team2)}</div></div>
-    <div class="mm-loc">${L?`📍 ${L}`:""}</div>
+    <div class="mm-loc">${mid}</div>
     <div class="mm-right">${right}</div>
   </div>`;
 }
@@ -342,9 +359,10 @@ function renderOverzicht(){
   let goals=0; playedM.forEach(m=>{ const f=m.score.et||m.score.ft; goals+=f[0]+f[1]; });
   const R=ranked(); const lead=R[0];
   const hasPts = lead && lead.sp>0;
-  const today=todayNL(), yest=shiftYMD(today,-1);
-  const yM=MATCHES.filter(m=>m.date===yest);
-  const tM=MATCHES.filter(m=>m.date===today);
+  const today=todayNL(), yest=shiftYMD(today,-1), tom=shiftYMD(today,1);
+  const gisterM=MATCHES.filter(m=>m.date===yest);
+  const vandaagM=MATCHES.filter(m=>m.date===today);
+  const morgenM=MATCHES.filter(m=>m.date===tom);
   const empty=`<div class="status" style="padding:14px">Geen wedstrijden.</div>`;
   const med=["🥇","🥈","🥉"];
   const podium = hasPts
@@ -366,10 +384,22 @@ function renderOverzicht(){
       <div class="award"><div class="em">⚽</div><div class="t">Doelpunten totaal</div><div class="n">${goals}</div><div class="v">in ${played} wedstr.</div></div>
       <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
     </div>
-    <h2 class="grp">Vandaag (${dayLabel(today)})</h2>
-    <div class="card">${tM.length? tM.map(m=>miniMatch(m)).join(""): empty}</div>
-    <h2 class="grp">Gisteren (${dayLabel(yest)})</h2>
-    <div class="card">${yM.length? yM.map(m=>miniMatch(m)).join(""): empty}</div>`;
+    <div class="sect vooruit">
+      <div class="sect-head">⏩ Vooruit</div>
+      <div class="card">
+        <div class="sub-day">Vandaag &middot; ${dayLabel(today)}</div>
+        ${vandaagM.length? vandaagM.map(m=>miniMatch(m)).join(""): empty}
+        <div class="sub-day">Morgen &middot; ${dayLabel(tom)}</div>
+        ${morgenM.length? morgenM.map(m=>miniMatch(m)).join(""): empty}
+      </div>
+    </div>
+    <div class="sect terug">
+      <div class="sect-head">⏪ Terug</div>
+      <div class="card">
+        <div class="sub-day">Gisteren &middot; ${dayLabel(yest)}</div>
+        ${gisterM.length? gisterM.map(m=>miniMatch(m)).join(""): empty}
+      </div>
+    </div>`;
 }
 
 function renderKlassement(){
@@ -490,18 +520,7 @@ function renderKO(){
     const ms=MATCHES.filter(m=>m.round===r);
     if(!ms.length) return;
     h+=`<div class="ko-round">${labels[r]||r}</div><div class="card">`;
-    ms.forEach(m=>{
-      const sc=scoreStr(m);
-      const fin=m.score&&(m.score.et||m.score.ft);
-      let w1=false,w2=false;
-      if(m.score){ if(m.score.p){w1=m.score.p[0]>m.score.p[1];w2=!w1;} else if(fin){w1=fin[0]>fin[1];w2=fin[1]>fin[0];} }
-      const known1=LAND[m.team1]!==undefined, known2=LAND[m.team2]!==undefined;
-      h+=`<div class="match"><div class="mt">
-        <div class="mteam ${w1?'win':''}"><span>${teamCell(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
-        <div class="mteam ${w2?'win':''}"><span>${teamCell(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
-        <div class="mmeta">${m.num?`Wedstrijd ${m.num} &middot; `:""}${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}${loc(m)?` &middot; 📍 ${loc(m)}`:""}</div>
-      </div></div>`;
-    });
+    ms.forEach(m=>{ h+=miniMatch(m,{date:true,num:true}); });
     h+=`</div>`;
   });
   document.getElementById("ko").innerHTML=h;
@@ -543,7 +562,8 @@ document.getElementById("refreshBtn").addEventListener("click",load);
 document.getElementById("hdDate").textContent = new Date().toLocaleDateString("nl-NL",{timeZone:"Europe/Amsterdam",weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
 load();
-setInterval(load, 5*60*1000); // elke 5 minuten verversen
+setInterval(load, 5*60*1000); // elke 5 minuten data verversen
+setInterval(tickCountdowns, 60*1000); // teller elke minuut bijwerken
 </script>
 </body>
 </html>
