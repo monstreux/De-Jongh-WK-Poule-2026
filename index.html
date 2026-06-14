@@ -68,7 +68,7 @@
     <div>
       <div class="eyebrow">Live klassement</div>
       <h1>WK-poule 2026</h1>
-      <div class="sub">Winst 3 &middot; gelijk 1 &middot; verlies 0</div>
+      <div class="sub">Groep: winst 3, gelijk 1 &middot; Knock-out winst: 3 / 6 / 9 / 12 / 15</div>
     </div>
     <button class="refresh" id="refreshBtn">Ververs</button>
   </div>
@@ -157,9 +157,23 @@ function outcome(m, teamEN){
   return {gf, ga, res, ko: !m.group};
 }
 
+// ---- Winstpunten per ronde (knock-out loopt op) ----
+function winPoints(m){
+  if(m.group) return 3;                       // groepsfase
+  switch(m.round){
+    case "Round of 32": return 3;
+    case "Round of 16": return 6;
+    case "Quarter-final": return 9;
+    case "Semi-final": return 12;
+    case "Final": return 15;
+    case "Match for third place": return 0;   // troostfinale: geen bonus (aanname)
+    default: return 3;
+  }
+}
+
 // ---- Alles per deelnemer ----
 function computeParticipant(p){
-  let w=0,g=0,v=0,gf=0,ga=0,cs=0,sp=0;
+  let w=0,g=0,v=0,gf=0,ga=0,cs=0,sp=0,pts=0;
   const scorers = {};
   p.lands.forEach(land=>{
     MATCHES.forEach(m=>{
@@ -167,7 +181,9 @@ function computeParticipant(p){
       if(!inMatch) return;
       const o = outcome(m, land); if(!o) return;
       sp++; gf+=o.gf; ga+=o.ga;
-      if(o.res==="W") w++; else if(o.res==="G") g++; else v++;
+      if(o.res==="W"){ w++; pts+=winPoints(m); }
+      else if(o.res==="G"){ g++; pts+=1; }
+      else v++;
       if(o.ga===0) cs++;
       const isT1 = norm(m.team1)===norm(land);
       const goals = (isT1? m.goals1 : m.goals2) || [];
@@ -176,7 +192,7 @@ function computeParticipant(p){
   });
   let top=null;
   Object.keys(scorers).forEach(n=>{ if(!top||scorers[n]>top.goals) top={name:n,goals:scorers[n]}; });
-  return {...p, w,g,v,sp,gf,ga,cs,saldo:gf-ga,pts:w*3+g, top};
+  return {...p, w,g,v,sp,gf,ga,cs,saldo:gf-ga,pts, top};
 }
 
 function ranked(){
