@@ -82,6 +82,22 @@
   .hide{display:none}
   .bar{height:16px;background:var(--soft);border-radius:10px;overflow:hidden;margin-top:10px}
   .barfill{height:100%;background:linear-gradient(90deg,#0B6E4F,#159E6B,#F2A030,#E24B4A)}
+  .timeline{position:relative;display:flex;height:20px;border-radius:8px;overflow:hidden;margin-top:12px}
+  .tl-seg{height:100%}
+  .tl-seg + .tl-seg{border-left:2px solid #fff}
+  .tl-future{position:absolute;top:0;bottom:0;right:0;background:rgba(255,255,255,.55)}
+  .tl-marker{position:absolute;top:-3px;bottom:-3px;width:3px;background:#16201A;border-radius:2px}
+  .tl-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px}
+  .tl-li{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-weight:600}
+  .tl-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .mmatch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 2px;border-top:1px solid var(--soft)}
+  .mmatch:first-child{border-top:none}
+  .mm-teams{flex:1;min-width:0;font-size:14px;line-height:1.7;font-weight:600}
+  .mm-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mm-right{text-align:right;min-width:80px}
+  .mm-time{font-family:var(--display);font-size:23px;color:var(--orange);line-height:1}
+  .mm-score{font-family:var(--display);font-size:24px;color:var(--green);line-height:1}
+  .mm-sub{font-size:12px;color:var(--muted);font-weight:600;margin-top:3px}
   @media (max-width:430px){
     header{padding:22px 14px 18px}
     h1{font-size:30px}
@@ -266,13 +282,35 @@ function shiftYMD(ymd,days){
 function dayLabel(ymd){
   return new Date(ymd+"T12:00:00Z").toLocaleDateString("nl-NL",{day:"numeric",month:"short"});
 }
+function koDate2(m){
+  const t=(m.time||"").match(/(\d{1,2}):(\d{2}).*UTC([+-]\d{1,2})/);
+  if(!t||!m.date) return null;
+  const off=(t[3].length===2?t[3][0]+"0"+t[3].slice(1):t[3].replace(/([+-])(\d)$/,"$10$2"));
+  const d=new Date(`${m.date}T${t[1].padStart(2,"0")}:${t[2]}:00${off}:00`);
+  return isNaN(d)?null:d;
+}
+function koClock(m){ const d=koDate2(m); return d? d.toLocaleTimeString("nl-NL",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}) : (m.time||""); }
+function countdown(m){
+  const d=koDate2(m); if(!d) return "";
+  const diff=d.getTime()-Date.now();
+  if(diff<=0) return "begonnen";
+  const h=Math.floor(diff/3600000);
+  if(h>=1) return `over ${h} uur`;
+  return `over ${Math.round(diff/60000)} min`;
+}
 function miniMatch(m){
   const sc=scoreStr(m); const fin=m.score&&(m.score.et||m.score.ft);
-  return `<div class="match"><div class="mt">
-    <div class="mteam"><span>${ph(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
-    <div class="mteam"><span>${ph(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
-    <div class="mmeta">${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}</div>
-  </div></div>`;
+  let right;
+  if(sc){
+    right=`<div class="mm-score">${fin[0]}-${fin[1]}</div><div class="mm-sub">${m.score.p?`pen. ${m.score.p[0]}-${m.score.p[1]}`:"gespeeld"}</div>`;
+  } else {
+    const cd=countdown(m);
+    right=`<div class="mm-time">${koClock(m)}</div>${cd?`<div class="mm-sub">${cd}</div>`:""}`;
+  }
+  return `<div class="mmatch">
+    <div class="mm-teams"><div class="mm-t">${ph(m.team1)}</div><div class="mm-t">${ph(m.team2)}</div></div>
+    <div class="mm-right">${right}</div>
+  </div>`;
 }
 function renderOverzicht(){
   const total=MATCHES.length;
@@ -290,11 +328,15 @@ function renderOverzicht(){
   const podium = hasPts
     ? R.slice(0,3).map((p,i)=>`<div class="row podium g${i+1}"><div class="rank">${med[i]}</div><div class="who"><div class="name">${p.name}</div></div><div><div class="pts">${p.pts}</div><div class="ptslabel">PTN</div></div></div>`).join("")
     : `<div class="card status">Nog geen punten. Zodra er uitslagen zijn, verschijnt de top 3 hier.</div>`;
+  const FASES=[{l:"Groepsfase",n:72,c:"#159E6B"},{l:"Laatste 32",n:16,c:"#7DBE3C"},{l:"Achtste",n:8,c:"#F2A030"},{l:"Kwart",n:4,c:"#F2722B"},{l:"Halve",n:2,c:"#E24B4A"},{l:"Finale",n:2,c:"#B5293D"}];
+  const segs=FASES.map(f=>`<div class="tl-seg" style="flex:${f.n};background:${f.c}"></div>`).join("");
+  const legend=FASES.map(f=>`<span class="tl-li"><span class="tl-dot" style="background:${f.c}"></span>${f.l}</span>`).join("");
   document.getElementById("overzicht").innerHTML=`
     <div class="card">
       <div style="font-family:var(--display);font-size:19px;color:var(--green)">Voortgang toernooi</div>
       <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:600">${played} van ${total} wedstrijden gespeeld</div>
-      <div class="bar"><div class="barfill" style="width:${pct}%"></div></div>
+      <div class="timeline">${segs}<div class="tl-future" style="left:${pct}%"></div><div class="tl-marker" style="left:${pct}%"></div></div>
+      <div class="tl-legend">${legend}</div>
     </div>
     <h2 class="grp">Top 3</h2>
     ${podium}
@@ -302,10 +344,10 @@ function renderOverzicht(){
       <div class="award"><div class="em">⚽</div><div class="t">Doelpunten totaal</div><div class="n">${goals}</div><div class="v">in ${played} wedstr.</div></div>
       <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
     </div>
-    <h2 class="grp">Gisteren (${dayLabel(yest)})</h2>
-    <div class="card">${yM.length? yM.map(miniMatch).join(""): empty}</div>
     <h2 class="grp">Vandaag (${dayLabel(today)})</h2>
-    <div class="card">${tM.length? tM.map(miniMatch).join(""): empty}</div>`;
+    <div class="card">${tM.length? tM.map(miniMatch).join(""): empty}</div>
+    <h2 class="grp">Gisteren (${dayLabel(yest)})</h2>
+    <div class="card">${yM.length? yM.map(miniMatch).join(""): empty}</div>`;
 }
 
 function renderKlassement(){
