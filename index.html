@@ -92,8 +92,9 @@
   .tl-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
   .mmatch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 2px;border-top:1px solid var(--soft)}
   .mmatch:first-child{border-top:none}
-  .mm-teams{flex:1;min-width:0;font-size:14px;line-height:1.7;font-weight:600}
+  .mm-teams{flex:1;min-width:0;font-size:15px;line-height:1.8;font-weight:600}
   .mm-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mm-t.mm-win{font-weight:800}
   .mm-right{text-align:right;min-width:80px}
   .mm-time{font-family:var(--display);font-size:23px;color:var(--orange);line-height:1}
   .mm-score{font-family:var(--display);font-size:24px;color:var(--green);line-height:1}
@@ -290,6 +291,7 @@ function koDate2(m){
   return isNaN(d)?null:d;
 }
 function koClock(m){ const d=koDate2(m); return d? d.toLocaleTimeString("nl-NL",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}) : (m.time||""); }
+function koDay(m){ const d=koDate2(m); return d? d.toLocaleDateString("nl-NL",{timeZone:"Europe/Amsterdam",day:"numeric",month:"short"}) : (m.date||""); }
 function countdown(m){
   const d=koDate2(m); if(!d) return "";
   const diff=d.getTime()-Date.now();
@@ -437,11 +439,16 @@ function renderGroepen(){
       const sc=scoreStr(m);
       const fin=m.score&&(m.score.et||m.score.ft);
       const w1=fin&&fin[0]>fin[1], w2=fin&&fin[1]>fin[0];
-      games+=`<div class="match"><div class="mt">
-        <div class="mteam ${w1?'win':''}"><span>${teamCell(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
-        <div class="mteam ${w2?'win':''}"><span>${teamCell(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
-        <div class="mmeta">${sc?(m.score.p?`Beslist op penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Eindstand"):kickoff(m)}</div>
-      </div></div>`;
+      let right;
+      if(sc){
+        right=`<div class="mm-score">${fin[0]}-${fin[1]}</div><div class="mm-sub">${m.score.p?`pen. ${m.score.p[0]}-${m.score.p[1]}`:"eindstand"}</div>`;
+      } else {
+        right=`<div class="mm-time">${koDay(m)}</div><div class="mm-sub">${koClock(m)}</div>`;
+      }
+      games+=`<div class="mmatch">
+        <div class="mm-teams"><div class="mm-t ${w1?'mm-win':''}">${teamCell(m.team1)}</div><div class="mm-t ${w2?'mm-win':''}">${teamCell(m.team2)}</div></div>
+        <div class="mm-right">${right}</div>
+      </div>`;
     });
     h+=`<h2 class="grp">${gname.replace("Group","Groep")}</h2>
       <div class="card scroll" style="padding:0;margin-bottom:8px">
