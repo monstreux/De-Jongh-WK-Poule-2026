@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WK-poule 2026</title>
+<style>
+  :root{
+    --ink:#16201A; --green:#0B6E4F; --greenDark:#084e38; --gold:#C9A227;
+    --silver:#9AA0A6; --bronze:#B07A3C; --muted:#6B7280; --line:#E6E8EA;
+    --soft:#F2F4F3; --win:#0B6E4F; --draw:#9AA0A6; --loss:#C24A3B; --bg:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:0 16px 56px}
+  header{background:var(--green);color:#fff;margin:0 0 16px;padding:24px 16px 18px;border-radius:0 0 16px 16px}
+  .hwrap{max-width:780px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:.85;font-weight:700}
+  h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .sub{margin-top:6px;font-size:13px;opacity:.9}
+  .refresh{background:transparent;border:1.5px solid rgba(255,255,255,.6);color:#fff;border-radius:8px;padding:8px 14px;font:700 14px Helvetica,Arial,sans-serif;cursor:pointer}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{flex:1;min-width:80px;padding:10px 4px;border-radius:10px;cursor:pointer;font:800 14px Helvetica,Arial,sans-serif;border:1.5px solid var(--line);background:#fff;color:var(--muted)}
+  .tab.active{border-color:var(--green);background:var(--green);color:#fff}
+  .card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin-bottom:12px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;margin-bottom:8px}
+  .row.leader{background:#FBF6E4;border-color:var(--gold)}
+  .rank{width:30px;text-align:center;font-size:20px;font-weight:800;color:var(--muted)}
+  .who{flex:1;min-width:0}
+  .name{font-size:16px;font-weight:800}
+  .lands{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+  .wgv{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .pts{font-size:26px;font-weight:800;line-height:1;color:var(--green);text-align:right}
+  .ptslabel{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-align:right}
+  table{border-collapse:collapse;width:100%;font-family:Helvetica,Arial,sans-serif}
+  th,td{text-align:right;padding:9px 6px;font-size:14px}
+  th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  td.l,th.l{text-align:left}
+  tr+tr td{border-top:1px solid var(--soft)}
+  .scroll{overflow-x:auto}
+  .awards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .award{flex:1 1 150px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+  .award .em{font-size:22px}
+  .award .t{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+  .award .n{font-size:16px;font-weight:800;margin-top:2px}
+  .award .v{font-size:13px;color:var(--green);font-weight:700}
+  h2.grp{margin:18px 0 8px;font-size:18px;font-weight:800}
+  .match{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--soft);font-size:14px}
+  .match:first-child{border-top:none}
+  .mt{flex:1;min-width:0}
+  .mteam{display:flex;justify-content:space-between;gap:8px}
+  .mteam.win{font-weight:800}
+  .mmeta{font-size:12px;color:var(--muted);margin-top:2px}
+  .badge{font-size:11px;color:#fff;background:var(--green);border-radius:5px;padding:1px 6px;font-weight:700;margin-left:6px}
+  .ko-round{margin:18px 0 6px;font-size:16px;font-weight:800;color:var(--greenDark)}
+  .note{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.5}
+  .status{text-align:center;color:var(--muted);font-size:13px;padding:30px 8px}
+  .err{background:#FFF6E6;border:1px solid var(--gold);color:#7a5b00;border-radius:8px;padding:12px;font-size:13px;margin-bottom:14px}
+  .owner{font-size:11px;color:var(--green);font-weight:700}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div>
+      <div class="eyebrow">Live klassement</div>
+      <h1>WK-poule 2026</h1>
+      <div class="sub">Winst 3 &middot; gelijk 1 &middot; verlies 0</div>
+    </div>
+    <button class="refresh" id="refreshBtn">Ververs</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="klassement">Klassement</button>
+    <button class="tab" data-tab="stats">Stats</button>
+    <button class="tab" data-tab="groepen">Groepsfase</button>
+    <button class="tab" data-tab="ko">Knock-out</button>
+  </div>
+
+  <div id="msg"></div>
+  <section id="klassement"></section>
+  <section id="stats" class="hide"></section>
+  <section id="groepen" class="hide"></section>
+  <section id="ko" class="hide"></section>
+
+  <div class="note" id="footer"></div>
+</div>
+
+<script>
+// ---- Bronnen (keyloos, publiek domein). Mirror eerst, officieel als reserve. ----
+const SOURCES = [
+  "https://raw.githubusercontent.com/upbound-web/worldcup-live.json/master/2026/worldcup.json",
+  "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
+];
+
+// ---- Deelnemers (landen in feed-spelling) ----
+const PARTICIPANTS = [
+  {name:"Shirley", lands:["France","Uruguay","Colombia","South Africa","Czech Republic","Jordan"]},
+  {name:"Anouk",   lands:["Netherlands","Morocco","South Korea","Canada","Uzbekistan","Haiti"]},
+  {name:"Lia",     lands:["Brazil","Croatia","Qatar","Saudi Arabia","Paraguay","Iraq"]},
+  {name:"Bas W",   lands:["Spain","Mexico","USA","Turkey","Sweden","Iran"]},
+  {name:"Bas VS",  lands:["England","Belgium","Ecuador","Egypt","Algeria","Cape Verde"]},
+  {name:"Gap",     lands:["Switzerland","Norway","Ghana","Tunisia","Bosnia & Herzegovina","Curaçao"]},
+  {name:"Steef",   lands:["Argentina","Japan","Australia","Ivory Coast","New Zealand","DR Congo"]},
+  {name:"Brigitte",lands:["Germany","Portugal","Austria","Senegal","Scotland","Panama"]},
+];
+
+// ---- Weergave NL + vlag per land ----
+const LAND = {
+  "France":["Frankrijk","🇫🇷"],"Uruguay":["Uruguay","🇺🇾"],"Colombia":["Colombia","🇨🇴"],
+  "South Africa":["Zuid-Afrika","🇿🇦"],"Czech Republic":["Tsjechië","🇨🇿"],"Jordan":["Jordanië","🇯🇴"],
+  "Netherlands":["Nederland","🇳🇱"],"Morocco":["Marokko","🇲🇦"],"South Korea":["Zuid-Korea","🇰🇷"],
+  "Canada":["Canada","🇨🇦"],"Uzbekistan":["Oezbekistan","🇺🇿"],"Haiti":["Haïti","🇭🇹"],
+  "Brazil":["Brazilië","🇧🇷"],"Croatia":["Kroatië","🇭🇷"],"Qatar":["Qatar","🇶🇦"],
+  "Saudi Arabia":["Saoedi-Arabië","🇸🇦"],"Paraguay":["Paraguay","🇵🇾"],"Iraq":["Irak","🇮🇶"],
+  "Spain":["Spanje","🇪🇸"],"Mexico":["Mexico","🇲🇽"],"USA":["Verenigde Staten","🇺🇸"],
+  "Turkey":["Turkije","🇹🇷"],"Sweden":["Zweden","🇸🇪"],"Iran":["Iran","🇮🇷"],
+  "England":["Engeland","🏴󠁧󠁢󠁥󠁮󠁧󠁿"],"Belgium":["België","🇧🇪"],"Ecuador":["Ecuador","🇪🇨"],
+  "Egypt":["Egypte","🇪🇬"],"Algeria":["Algerije","🇩🇿"],"Cape Verde":["Kaapverdië","🇨🇻"],
+  "Switzerland":["Zwitserland","🇨🇭"],"Norway":["Noorwegen","🇳🇴"],"Ghana":["Ghana","🇬🇭"],
+  "Tunisia":["Tunesië","🇹🇳"],"Bosnia & Herzegovina":["Bosnië","🇧🇦"],"Curaçao":["Curaçao","🇨🇼"],
+  "Argentina":["Argentinië","🇦🇷"],"Japan":["Japan","🇯🇵"],"Australia":["Australië","🇦🇺"],
+  "Ivory Coast":["Ivoorkust","🇨🇮"],"New Zealand":["Nieuw-Zeeland","🇳🇿"],"DR Congo":["DR Congo","🇨🇩"],
+  "Germany":["Duitsland","🇩🇪"],"Portugal":["Portugal","🇵🇹"],"Austria":["Oostenrijk","🇦🇹"],
+  "Senegal":["Senegal","🇸🇳"],"Scotland":["Schotland","🏴󠁧󠁢󠁳󠁣󠁴󠁿"],"Panama":["Panama","🇵🇦"],
+};
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+const nl   = en => (LAND[en]?LAND[en][0]:en);
+const flag = en => (LAND[en]?LAND[en][1]:"⚽");
+// land -> deelnemer (voor labels in groepsfase)
+const OWNER = {};
+PARTICIPANTS.forEach(p=>p.lands.forEach(l=>OWNER[norm(l)]=p.name));
+
+let MATCHES = [];
+let lastLoaded = null;
+
+// ---- Uitslag bepalen voor een team in een match ----
+function outcome(m, teamEN){
+  const s = m.score; if(!s || !s.ft) return null;
+  const isT1 = norm(m.team1)===norm(teamEN);
+  const fin = s.et || s.ft;                 // eindstand (na verlenging indien aanwezig)
+  const gf = isT1 ? fin[0] : fin[1];
+  const ga = isT1 ? fin[1] : fin[0];
+  let res;
+  if (s.p){                                  // beslist op penalty's = winst telt als winst
+    const pf = isT1 ? s.p[0] : s.p[1];
+    const pa = isT1 ? s.p[1] : s.p[0];
+    res = pf>pa ? "W" : "V";
+  } else {
+    res = gf>ga ? "W" : gf<ga ? "V" : "G";
+  }
+  return {gf, ga, res, ko: !m.group};
+}
+
+// ---- Alles per deelnemer ----
+function computeParticipant(p){
+  let w=0,g=0,v=0,gf=0,ga=0,cs=0,sp=0;
+  const scorers = {};
+  p.lands.forEach(land=>{
+    MATCHES.forEach(m=>{
+      const inMatch = norm(m.team1)===norm(land) || norm(m.team2)===norm(land);
+      if(!inMatch) return;
+      const o = outcome(m, land); if(!o) return;
+      sp++; gf+=o.gf; ga+=o.ga;
+      if(o.res==="W") w++; else if(o.res==="G") g++; else v++;
+      if(o.ga===0) cs++;
+      const isT1 = norm(m.team1)===norm(land);
+      const goals = (isT1? m.goals1 : m.goals2) || [];
+      goals.forEach(gl=>{ const k=gl.name; scorers[k]=(scorers[k]||0)+1; });
+    });
+  });
+  let top=null;
+  Object.keys(scorers).forEach(n=>{ if(!top||scorers[n]>top.goals) top={name:n,goals:scorers[n]}; });
+  return {...p, w,g,v,sp,gf,ga,cs,saldo:gf-ga,pts:w*3+g, top};
+}
+
+function ranked(){
+  return PARTICIPANTS.map(computeParticipant)
+    .sort((a,b)=> b.pts-a.pts || b.w-a.w || b.saldo-a.saldo || a.name.localeCompare(b.name));
+}
+
+// ---- Kickoff naar NL-tijd ----
+function kickoff(m){
+  const t = (m.time||"").match(/(\d{1,2}):(\d{2}).*UTC([+-]\d{1,2})/);
+  if(!t || !m.date) return m.time||"";
+  const off = (t[3].length===2? t[3][0]+"0"+t[3].slice(1): t[3].replace(/([+-])(\d)$/,"$10$2"));
+  const iso = `${m.date}T${t[1].padStart(2,"0")}:${t[2]}:00${off}:00`;
+  const d = new Date(iso);
+  if(isNaN(d)) return m.time||"";
+  return d.toLocaleString("nl-NL",{timeZone:"Europe/Amsterdam",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+}
+function scoreStr(m){
+  const s=m.score; if(!s||!s.ft) return null;
+  const fin=s.et||s.ft; let str=`${fin[0]} - ${fin[1]}`;
+  if(s.p) str+=` (pen. ${s.p[0]}-${s.p[1]})`;
+  return str;
+}
+
+// ---- Renderen ----
+function elPill(label,val,color){ return `<span class="pill" style="color:${color}"><span class="dot" style="background:${color}"></span>${val}<span style="color:var(--muted);font-weight:600">${label}</span></span>`; }
+
+function renderKlassement(){
+  const R = ranked();
+  const played = R.reduce((s,p)=>s+p.sp,0);
+  if(played===0){
+    document.getElementById("klassement").innerHTML =
+      `<div class="card status">⚽ Het toernooi is net begonnen. Zodra er uitslagen zijn, verschijnt de stand hier vanzelf.</div>`;
+    return;
+  }
+  const medal=i=> i===0?"var(--gold)": i===1?"var(--silver)": i===2?"var(--bronze)":"var(--muted)";
+  let h="";
+  R.forEach((p,i)=>{
+    const lead=i===0;
+    h+=`<div class="row ${lead?'leader':''}">
+      <div class="rank" style="color:${medal(i)}">${i+1}</div>
+      <div class="who">
+        <div class="name">${p.name}</div>
+        <div class="lands">${p.lands.map(l=>flag(l)+" "+nl(l)).join("  ")}</div>
+        <div class="wgv">
+          ${elPill("W",p.w,"var(--win)")}${elPill("G",p.g,"var(--draw)")}${elPill("V",p.v,"var(--loss)")}
+          <span style="font-size:12px;color:var(--muted);font-weight:600">${p.sp} wedstr.</span>
+        </div>
+      </div>
+      <div><div class="pts">${p.pts}</div><div class="ptslabel">PTN</div></div>
+    </div>`;
+  });
+  document.getElementById("klassement").innerHTML=h;
+}
+
+function renderStats(){
+  const R = ranked();
+  const played = R.reduce((s,p)=>s+p.sp,0);
+  const wrap = document.getElementById("stats");
+  if(played===0){ wrap.innerHTML=`<div class="card status">Nog geen wedstrijden gespeeld.</div>`; return; }
+  const withGames = R.filter(p=>p.sp>0);
+  const topscorer = R.reduce((a,b)=> (b.top&&(!a||b.top.goals>(a.top?a.top.goals:0)))?b:a, null);
+  const muur = withGames.reduce((a,b)=> b.ga<a.ga?b:a, withGames[0]);
+  const saldoK = withGames.reduce((a,b)=> b.saldo>a.saldo?b:a, withGames[0]);
+  const goalK = withGames.reduce((a,b)=> b.gf>a.gf?b:a, withGames[0]);
+  let aw="";
+  if(topscorer&&topscorer.top) aw+=`<div class="award"><div class="em">🥅</div><div class="t">Topscorer</div><div class="n">${topscorer.top.name}</div><div class="v">${topscorer.top.goals} goals &middot; ${topscorer.name}</div></div>`;
+  aw+=`<div class="award"><div class="em">🧤</div><div class="t">Beste verdediging</div><div class="n">${muur.name}</div><div class="v">${muur.ga} tegen</div></div>`;
+  aw+=`<div class="award"><div class="em">📈</div><div class="t">Hoogste saldo</div><div class="n">${saldoK.name}</div><div class="v">${saldoK.saldo>0?"+":""}${saldoK.saldo}</div></div>`;
+  aw+=`<div class="award"><div class="em">🔥</div><div class="t">Meeste goals</div><div class="n">${goalK.name}</div><div class="v">${goalK.gf} goals</div></div>`;
+  let rows="";
+  R.forEach(p=>{
+    rows+=`<tr><td class="l" style="font-weight:700">${p.name}</td><td>${p.sp}</td><td>${p.gf}</td><td>${p.ga}</td>
+      <td style="font-weight:700;color:${p.saldo>0?'var(--green)':p.saldo<0?'var(--loss)':'var(--muted)'}">${p.saldo>0?"+":""}${p.saldo}</td>
+      <td>${p.cs}</td></tr>`;
+  });
+  wrap.innerHTML=`<div class="awards">${aw}</div>
+    <div class="card scroll" style="padding:0">
+      <table><thead><tr><th class="l" style="padding-left:14px">Deelnemer</th><th>Wd</th><th>Voor</th><th>Tegen</th><th>Saldo</th><th>Clean</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+    <div class="note">Wd = wedstrijden, Clean = wedstrijden zonder tegengoal. Topscorer is de speler met de meeste goals onder de landen van een deelnemer.</div>`;
+}
+
+function groupStanding(groupName){
+  const ms = MATCHES.filter(m=>m.group===groupName);
+  const teams={};
+  const add=t=>{ if(!teams[t]) teams[t]={team:t,sp:0,w:0,g:0,v:0,gf:0,ga:0}; };
+  ms.forEach(m=>{ add(m.team1); add(m.team2);
+    const s=m.score; if(!s||!s.ft) return;
+    const fin=s.ft; const a=teams[m.team1], b=teams[m.team2];
+    a.sp++; b.sp++; a.gf+=fin[0]; a.ga+=fin[1]; b.gf+=fin[1]; b.ga+=fin[0];
+    if(fin[0]>fin[1]){a.w++;b.v++;} else if(fin[0]<fin[1]){b.w++;a.v++;} else {a.g++;b.g++;}
+  });
+  return Object.values(teams).map(t=>({...t,pts:t.w*3+t.g,saldo:t.gf-t.ga}))
+    .sort((x,y)=> y.pts-x.pts || y.saldo-x.saldo || y.gf-x.gf || x.team.localeCompare(y.team));
+}
+
+function renderGroepen(){
+  const groups=[...new Set(MATCHES.filter(m=>m.group).map(m=>m.group))];
+  let h="";
+  groups.forEach(gname=>{
+    const st=groupStanding(gname);
+    let rows="";
+    st.forEach((t,i)=>{
+      const own=OWNER[norm(t.team)];
+      rows+=`<tr><td class="l">${i+1}. ${flag(t.team)} ${nl(t.team)} ${own?`<span class="owner">${own}</span>`:""}</td>
+        <td>${t.sp}</td><td>${t.w}-${t.g}-${t.v}</td><td>${t.saldo>0?"+":""}${t.saldo}</td><td style="font-weight:800">${t.pts}</td></tr>`;
+    });
+    let games="";
+    MATCHES.filter(m=>m.group===gname).forEach(m=>{
+      const sc=scoreStr(m);
+      const fin=m.score&&(m.score.et||m.score.ft);
+      const w1=fin&&fin[0]>fin[1], w2=fin&&fin[1]>fin[0];
+      games+=`<div class="match"><div class="mt">
+        <div class="mteam ${w1?'win':''}"><span>${flag(m.team1)} ${nl(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
+        <div class="mteam ${w2?'win':''}"><span>${flag(m.team2)} ${nl(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
+        <div class="mmeta">${sc?(m.score.p?`Beslist op penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Eindstand"):kickoff(m)}</div>
+      </div></div>`;
+    });
+    h+=`<h2 class="grp">${gname.replace("Group","Groep")}</h2>
+      <div class="card scroll" style="padding:0;margin-bottom:8px">
+        <table><thead><tr><th class="l" style="padding-left:14px">Team</th><th>Wd</th><th>W-G-V</th><th>+/-</th><th>Ptn</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div class="card">${games}</div>`;
+  });
+  document.getElementById("groepen").innerHTML=h;
+}
+
+// placeholder -> leesbaar
+function ph(code){
+  if(LAND[code]!==undefined || OWNER[norm(code)]!==undefined) return `${flag(code)} ${nl(code)}`;
+  let m;
+  if(m=code.match(/^([123])([A-L])$/)){ const o={1:"Winnaar",2:"Nr. 2",3:"Nr. 3"}; return `${o[m[1]]} groep ${m[2]}`; }
+  if(m=code.match(/^3([A-L/]+)$/)) return `Nr. 3 (${m[1]})`;
+  if(m=code.match(/^W(\d+)$/)) return `Winnaar wd ${m[1]}`;
+  if(m=code.match(/^L(\d+)$/)) return `Verliezer wd ${m[1]}`;
+  return code;
+}
+function renderKO(){
+  const order=["Round of 32","Round of 16","Quarter-final","Semi-final","Match for third place","Final"];
+  const labels={"Round of 32":"Achtste finales (laatste 32)","Round of 16":"Achtste finales (laatste 16)","Quarter-final":"Kwartfinales","Semi-final":"Halve finales","Match for third place":"Troostfinale","Final":"Finale"};
+  let h="";
+  order.forEach(r=>{
+    const ms=MATCHES.filter(m=>m.round===r);
+    if(!ms.length) return;
+    h+=`<div class="ko-round">${labels[r]||r}</div><div class="card">`;
+    ms.forEach(m=>{
+      const sc=scoreStr(m);
+      const fin=m.score&&(m.score.et||m.score.ft);
+      let w1=false,w2=false;
+      if(m.score){ if(m.score.p){w1=m.score.p[0]>m.score.p[1];w2=!w1;} else if(fin){w1=fin[0]>fin[1];w2=fin[1]>fin[0];} }
+      const known1=LAND[m.team1]!==undefined, known2=LAND[m.team2]!==undefined;
+      h+=`<div class="match"><div class="mt">
+        <div class="mteam ${w1?'win':''}"><span>${ph(m.team1)} ${known1&&OWNER[norm(m.team1)]?`<span class="owner">${OWNER[norm(m.team1)]}</span>`:""}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
+        <div class="mteam ${w2?'win':''}"><span>${ph(m.team2)} ${known2&&OWNER[norm(m.team2)]?`<span class="owner">${OWNER[norm(m.team2)]}</span>`:""}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
+        <div class="mmeta">${m.num?`Wedstrijd ${m.num} &middot; `:""}${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}</div>
+      </div></div>`;
+    });
+    h+=`</div>`;
+  });
+  document.getElementById("ko").innerHTML=h;
+}
+
+function renderAll(){
+  renderKlassement(); renderStats(); renderGroepen(); renderKO();
+  document.getElementById("footer").innerHTML =
+    `Bron: openfootball (publiek domein), uitslagen binnen enkele uren na affluiten bijgewerkt.` +
+    (lastLoaded?` Laatst geladen ${lastLoaded.toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.`:"");
+}
+
+async function load(){
+  document.getElementById("msg").innerHTML="";
+  for(const src of SOURCES){
+    try{
+      const r=await fetch(src,{cache:"no-store"});
+      if(!r.ok) continue;
+      const data=await r.json();
+      MATCHES=data.matches||[];
+      lastLoaded=new Date();
+      renderAll();
+      return;
+    }catch(e){ /* volgende bron */ }
+  }
+  document.getElementById("msg").innerHTML=
+    `<div class="err">De live data kon nu niet geladen worden. In de preview binnen Claude blokkeert de omgeving soms externe data. Zodra deze pagina op Vercel staat, werkt de live stand normaal. Druk anders op Ververs.</div>`;
+}
+
+// tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  ["klassement","stats","groepen","ko"].forEach(id=>document.getElementById(id).classList.add("hide"));
+  document.getElementById(t.dataset.tab).classList.remove("hide");
+}));
+document.getElementById("refreshBtn").addEventListener("click",load);
+
+load();
+setInterval(load, 5*60*1000); // elke 5 minuten verversen
+</script>
+</body>
+</html>
