@@ -4,36 +4,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WK-poule 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#16201A; --green:#0B6E4F; --greenDark:#084e38; --gold:#C9A227;
-    --silver:#9AA0A6; --bronze:#B07A3C; --muted:#6B7280; --line:#E6E8EA;
-    --soft:#F2F4F3; --win:#0B6E4F; --draw:#9AA0A6; --loss:#C24A3B; --bg:#fff;
+    --ink:#16201A; --green:#0B6E4F; --green2:#159E6B; --greenDark:#084e38;
+    --orange:#F2722B; --amber:#F2A030; --gold:#C9A227; --silver:#9AA0A6; --bronze:#B07A3C;
+    --red:#E24B4A; --purple:#534AB7; --muted:#6B7280; --line:#E9E2D6; --soft:#F4EEE3;
+    --win:#0B6E4F; --draw:#9AA0A6; --loss:#C24A3B; --bg:#FFFBF4;
+    --display:"Anton","Arial Black",Impact,Helvetica,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{max-width:780px;margin:0 auto;padding:0 16px 56px}
-  header{background:var(--green);color:#fff;margin:0 0 16px;padding:24px 16px 18px;border-radius:0 0 16px 16px}
-  .hwrap{max-width:780px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-  .eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:.85;font-weight:700}
-  h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.5px}
-  .sub{margin-top:6px;font-size:13px;opacity:.9}
-  .refresh{background:transparent;border:1.5px solid rgba(255,255,255,.6);color:#fff;border-radius:8px;padding:8px 14px;font:700 14px Helvetica,Arial,sans-serif;cursor:pointer}
+  header{position:relative;overflow:hidden;background:linear-gradient(120deg,#0B6E4F 0%,#159E6B 48%,#F2A030 100%);color:#fff;margin:0 0 16px;padding:26px 16px 20px;border-radius:0 0 22px 22px}
+  .cf{position:absolute;border-radius:50%;opacity:.85}
+  .hwrap{position:relative;max-width:780px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .eyebrow{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;opacity:.9;font-weight:700}
+  h1{font-family:var(--display);margin:4px 0 0;font-size:38px;line-height:.95;letter-spacing:.5px;font-weight:400}
+  .sub{margin-top:8px;font-size:13px;opacity:.95;font-weight:600}
+  .refresh{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.65);color:#fff;border-radius:10px;padding:8px 14px;font:700 14px Helvetica,Arial,sans-serif;cursor:pointer}
   .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-  .tab{flex:1;min-width:80px;padding:10px 4px;border-radius:10px;cursor:pointer;font:800 14px Helvetica,Arial,sans-serif;border:1.5px solid var(--line);background:#fff;color:var(--muted)}
-  .tab.active{border-color:var(--green);background:var(--green);color:#fff}
-  .card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin-bottom:12px}
-  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;margin-bottom:8px}
-  .row.leader{background:#FBF6E4;border-color:var(--gold)}
-  .rank{width:30px;text-align:center;font-size:20px;font-weight:800;color:var(--muted)}
+  .tab{flex:1;min-width:80px;padding:11px 4px;border-radius:12px;cursor:pointer;font:800 14px Helvetica,Arial,sans-serif;border:1.5px solid var(--line);background:#fff;color:var(--muted)}
+  .tab.active{border-color:var(--orange);background:var(--orange);color:#fff}
+  .card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:14px;margin-bottom:12px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#fff;margin-bottom:9px}
+  .rank{width:34px;text-align:center;font-family:var(--display);font-size:22px;color:var(--muted)}
   .who{flex:1;min-width:0}
-  .name{font-size:16px;font-weight:800}
-  .lands{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+  .name{font-family:var(--display);font-size:19px;letter-spacing:.3px}
+  .lands{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
   .wgv{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
   .pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700}
   .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-  .pts{font-size:26px;font-weight:800;line-height:1;color:var(--green);text-align:right}
+  .pts{font-family:var(--display);font-size:30px;line-height:1;color:var(--green);text-align:right}
   .ptslabel{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-align:right}
+  /* podium */
+  .row.podium{border:none;color:#fff}
+  .row.podium .rank{font-size:26px;color:#fff;width:34px}
+  .row.podium .name,.row.podium .pts{color:#fff}
+  .row.podium .ptslabel{color:rgba(255,255,255,.85)}
+  .row.podium .lands{color:rgba(255,255,255,.92)}
+  .row.podium .pill{color:#fff !important}
+  .row.podium .pill .dot{background:#fff !important}
+  .row.podium .pill span,.row.podium .wlabel{color:rgba(255,255,255,.85) !important}
+  .row.podium.g1{background:linear-gradient(100deg,#C9821B,#F2A030)}
+  .row.podium.g2{background:linear-gradient(100deg,#7E8790,#A9B0B6)}
+  .row.podium.g3{background:linear-gradient(100deg,#9A5A2B,#C07A3C)}
   table{border-collapse:collapse;width:100%;font-family:Helvetica,Arial,sans-serif}
   th,td{text-align:right;padding:9px 6px;font-size:14px}
   th{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
@@ -41,36 +58,51 @@
   tr+tr td{border-top:1px solid var(--soft)}
   .scroll{overflow-x:auto}
   .awards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-  .award{flex:1 1 150px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+  .award{flex:1 1 150px;border:none;border-radius:14px;padding:13px 15px;color:#fff}
+  .awards .award:nth-child(1){background:linear-gradient(120deg,#0B6E4F,#159E6B)}
+  .awards .award:nth-child(2){background:linear-gradient(120deg,#E24B4A,#F2722B)}
+  .awards .award:nth-child(3){background:linear-gradient(120deg,#C9821B,#F2A030)}
+  .awards .award:nth-child(4){background:linear-gradient(120deg,#534AB7,#7F77DD)}
   .award .em{font-size:22px}
-  .award .t{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
-  .award .n{font-size:16px;font-weight:800;margin-top:2px}
-  .award .v{font-size:13px;color:var(--green);font-weight:700}
-  h2.grp{margin:18px 0 8px;font-size:18px;font-weight:800}
+  .award .t{font-size:12px;color:rgba(255,255,255,.85);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+  .award .n{font-family:var(--display);font-size:21px;margin-top:3px;letter-spacing:.3px}
+  .award .v{font-size:13px;color:rgba(255,255,255,.95);font-weight:700}
+  h2.grp{font-family:var(--display);margin:20px 0 8px;font-size:22px;color:var(--green);letter-spacing:.5px}
   .match{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--soft);font-size:14px}
   .match:first-child{border-top:none}
   .mt{flex:1;min-width:0}
   .mteam{display:flex;justify-content:space-between;gap:8px}
   .mteam.win{font-weight:800}
   .mmeta{font-size:12px;color:var(--muted);margin-top:2px}
-  .badge{font-size:11px;color:#fff;background:var(--green);border-radius:5px;padding:1px 6px;font-weight:700;margin-left:6px}
-  .ko-round{margin:18px 0 6px;font-size:16px;font-weight:800;color:var(--greenDark)}
+  .ko-round{font-family:var(--display);margin:20px 0 6px;font-size:19px;color:var(--orange);letter-spacing:.4px}
   .note{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.5}
   .status{text-align:center;color:var(--muted);font-size:13px;padding:30px 8px}
-  .err{background:#FFF6E6;border:1px solid var(--gold);color:#7a5b00;border-radius:8px;padding:12px;font-size:13px;margin-bottom:14px}
+  .err{background:#FFF1DD;border:1px solid var(--amber);color:#8a5a00;border-radius:10px;padding:12px;font-size:13px;margin-bottom:14px}
   .owner{font-size:11px;color:var(--green);font-weight:700}
   .hide{display:none}
-  .bar{height:12px;background:var(--soft);border-radius:8px;overflow:hidden;margin-top:10px}
-  .barfill{height:100%;background:var(--green)}
+  .bar{height:16px;background:var(--soft);border-radius:10px;overflow:hidden;margin-top:10px}
+  .barfill{height:100%;background:linear-gradient(90deg,#0B6E4F,#159E6B,#F2A030,#E24B4A)}
+  @media (max-width:430px){
+    header{padding:22px 14px 18px}
+    h1{font-size:30px}
+    .tab{min-width:0;padding:9px 2px;font-size:13px}
+    .name{font-size:18px}
+    .pts{font-size:26px}
+    h2.grp{font-size:20px}
+    .lands{font-size:11px}
+  }
 </style>
 </head>
 <body>
 <header>
+  <span class="cf" style="width:12px;height:12px;background:#FFC24B;bottom:16px;left:42%"></span>
+  <span class="cf" style="width:8px;height:8px;background:#E24B4A;top:18px;left:56%"></span>
+  <span class="cf" style="width:10px;height:10px;background:rgba(255,255,255,.7);bottom:26px;left:64%"></span>
   <div class="hwrap">
     <div>
-      <div class="eyebrow">Live klassement</div>
-      <h1>WK-poule 2026</h1>
-      <div class="sub">Groep: winst 3, gelijk 1 &middot; Knock-out winst: 3 / 6 / 9 / 12 / 15</div>
+      <div class="eyebrow" id="hdDate">Stand &middot; uitslagen &middot; stats</div>
+      <h1>WK-poule 2026 ⚽</h1>
+      <div class="sub">Groep: winst 3, gelijk 1 &middot; Knock-out: 3 / 6 / 9 / 12 / 15</div>
     </div>
     <button class="refresh" id="refreshBtn">Ververs</button>
   </div>
@@ -170,7 +202,7 @@ function winPoints(m){
     case "Quarter-final": return 9;
     case "Semi-final": return 12;
     case "Final": return 15;
-    case "Match for third place": return 0;   // troostfinale: geen bonus (aanname)
+    case "Match for third place": return 0;   // troostfinale: geen bonus
     default: return 3;
   }
 }
@@ -254,14 +286,19 @@ function renderOverzicht(){
   const yM=MATCHES.filter(m=>m.date===yest);
   const tM=MATCHES.filter(m=>m.date===today);
   const empty=`<div class="status" style="padding:14px">Geen wedstrijden.</div>`;
+  const med=["🥇","🥈","🥉"];
+  const podium = hasPts
+    ? R.slice(0,3).map((p,i)=>`<div class="row podium g${i+1}"><div class="rank">${med[i]}</div><div class="who"><div class="name">${p.name}</div></div><div><div class="pts">${p.pts}</div><div class="ptslabel">PTN</div></div></div>`).join("")
+    : `<div class="card status">Nog geen punten. Zodra er uitslagen zijn, verschijnt de top 3 hier.</div>`;
   document.getElementById("overzicht").innerHTML=`
     <div class="card">
-      <div style="font-weight:800;font-size:15px">Voortgang toernooi</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px">${played} van ${total} wedstrijden gespeeld</div>
+      <div style="font-family:var(--display);font-size:19px;color:var(--green)">Voortgang toernooi</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;font-weight:600">${played} van ${total} wedstrijden gespeeld</div>
       <div class="bar"><div class="barfill" style="width:${pct}%"></div></div>
     </div>
+    <h2 class="grp">Top 3</h2>
+    ${podium}
     <div class="awards">
-      <div class="award"><div class="em">🏆</div><div class="t">Koploper</div><div class="n">${hasPts?lead.name:"nog niemand"}</div><div class="v">${hasPts?lead.pts+" ptn":"0 ptn"}</div></div>
       <div class="award"><div class="em">⚽</div><div class="t">Doelpunten totaal</div><div class="n">${goals}</div><div class="v">in ${played} wedstr.</div></div>
       <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
     </div>
@@ -279,18 +316,18 @@ function renderKlassement(){
       `<div class="card status">⚽ Het toernooi is net begonnen. Zodra er uitslagen zijn, verschijnt de stand hier vanzelf.</div>`;
     return;
   }
-  const medal=i=> i===0?"var(--gold)": i===1?"var(--silver)": i===2?"var(--bronze)":"var(--muted)";
+  const med=["🥇","🥈","🥉"];
   let h="";
   R.forEach((p,i)=>{
-    const lead=i===0;
-    h+=`<div class="row ${lead?'leader':''}">
-      <div class="rank" style="color:${medal(i)}">${i+1}</div>
+    const pod=i<3;
+    h+=`<div class="row ${pod?`podium g${i+1}`:''}">
+      <div class="rank">${pod?med[i]:i+1}</div>
       <div class="who">
         <div class="name">${p.name}</div>
         <div class="lands">${p.lands.map(l=>flag(l)+" "+nl(l)).join("  ")}</div>
         <div class="wgv">
           ${elPill("W",p.w,"var(--win)")}${elPill("G",p.g,"var(--draw)")}${elPill("V",p.v,"var(--loss)")}
-          <span style="font-size:12px;color:var(--muted);font-weight:600">${p.sp} wedstr.</span>
+          <span class="wlabel" style="font-size:12px;color:var(--muted);font-weight:600">${p.sp} wedstr.</span>
         </div>
       </div>
       <div><div class="pts">${p.pts}</div><div class="ptslabel">PTN</div></div>
@@ -440,6 +477,8 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   document.getElementById(t.dataset.tab).classList.remove("hide");
 }));
 document.getElementById("refreshBtn").addEventListener("click",load);
+
+document.getElementById("hdDate").textContent = new Date().toLocaleDateString("nl-NL",{timeZone:"Europe/Amsterdam",weekday:"long",day:"numeric",month:"long",year:"numeric"});
 
 load();
 setInterval(load, 5*60*1000); // elke 5 minuten verversen
