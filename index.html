@@ -90,8 +90,10 @@
   .tl-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px}
   .tl-li{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-weight:600}
   .tl-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
-  .mmatch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 2px;border-top:1px solid var(--soft)}
+  .mmatch{padding:11px 2px;border-top:1px solid var(--soft)}
   .mmatch:first-child{border-top:none}
+  .mm-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .mm-loc{font-size:12px;color:var(--muted);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:4px}
   .mm-teams{flex:1;min-width:0;font-size:15px;line-height:1.8;font-weight:600}
   .mm-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mm-t.mm-win{font-weight:800}
@@ -292,6 +294,14 @@ function koDate2(m){
 }
 function koClock(m){ const d=koDate2(m); return d? d.toLocaleTimeString("nl-NL",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}) : (m.time||""); }
 function koDay(m){ const d=koDate2(m); return d? d.toLocaleDateString("nl-NL",{timeZone:"Europe/Amsterdam",day:"numeric",month:"short"}) : (m.date||""); }
+// WK 2026 gaststeden -> land, voor de locatieregel bij een wedstrijd
+const STAD_LAND={"atlanta":"USA","boston":"USA","dallas":"USA","houston":"USA","kansas city":"USA","los angeles":"USA","miami":"USA","new york/new jersey":"USA","philadelphia":"USA","san francisco bay area":"USA","san francisco":"USA","seattle":"USA","toronto":"Canada","vancouver":"Canada","mexico city":"Mexico","guadalajara":"Mexico","monterrey":"Mexico"};
+function loc(m){
+  if(!m.ground) return "";
+  const stad=m.ground.split("(")[0].trim();
+  const land=STAD_LAND[norm(stad)];
+  return land?`${stad} (${land})`:m.ground;
+}
 function countdown(m){
   const d=koDate2(m); if(!d) return "";
   const diff=d.getTime()-Date.now();
@@ -300,18 +310,27 @@ function countdown(m){
   if(h>=1) return `over ${h} uur`;
   return `over ${Math.round(diff/60000)} min`;
 }
-function miniMatch(m){
+function miniMatch(m,opt){
+  opt=opt||{};
   const sc=scoreStr(m); const fin=m.score&&(m.score.et||m.score.ft);
+  let w1=false,w2=false;
+  if(m.score){ if(m.score.p){w1=m.score.p[0]>m.score.p[1];w2=!w1;} else if(fin){w1=fin[0]>fin[1];w2=fin[1]>fin[0];} }
   let right;
   if(sc){
     right=`<div class="mm-score">${fin[0]}-${fin[1]}</div><div class="mm-sub">${m.score.p?`pen. ${m.score.p[0]}-${m.score.p[1]}`:"gespeeld"}</div>`;
+  } else if(opt.date){
+    right=`<div class="mm-time">${koDay(m)}</div><div class="mm-sub">${koClock(m)}</div>`;
   } else {
     const cd=countdown(m);
     right=`<div class="mm-time">${koClock(m)}</div>${cd?`<div class="mm-sub">${cd}</div>`:""}`;
   }
+  const L=loc(m);
   return `<div class="mmatch">
-    <div class="mm-teams"><div class="mm-t">${teamCell(m.team1)}</div><div class="mm-t">${teamCell(m.team2)}</div></div>
-    <div class="mm-right">${right}</div>
+    <div class="mm-row">
+      <div class="mm-teams"><div class="mm-t ${w1?'mm-win':''}">${teamCell(m.team1)}</div><div class="mm-t ${w2?'mm-win':''}">${teamCell(m.team2)}</div></div>
+      <div class="mm-right">${right}</div>
+    </div>
+    ${L?`<div class="mm-loc">📍 ${L}</div>`:""}
   </div>`;
 }
 function renderOverzicht(){
@@ -347,9 +366,9 @@ function renderOverzicht(){
       <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
     </div>
     <h2 class="grp">Vandaag (${dayLabel(today)})</h2>
-    <div class="card">${tM.length? tM.map(miniMatch).join(""): empty}</div>
+    <div class="card">${tM.length? tM.map(m=>miniMatch(m)).join(""): empty}</div>
     <h2 class="grp">Gisteren (${dayLabel(yest)})</h2>
-    <div class="card">${yM.length? yM.map(miniMatch).join(""): empty}</div>`;
+    <div class="card">${yM.length? yM.map(m=>miniMatch(m)).join(""): empty}</div>`;
 }
 
 function renderKlassement(){
@@ -436,19 +455,7 @@ function renderGroepen(){
     });
     let games="";
     MATCHES.filter(m=>m.group===gname).forEach(m=>{
-      const sc=scoreStr(m);
-      const fin=m.score&&(m.score.et||m.score.ft);
-      const w1=fin&&fin[0]>fin[1], w2=fin&&fin[1]>fin[0];
-      let right;
-      if(sc){
-        right=`<div class="mm-score">${fin[0]}-${fin[1]}</div><div class="mm-sub">${m.score.p?`pen. ${m.score.p[0]}-${m.score.p[1]}`:"eindstand"}</div>`;
-      } else {
-        right=`<div class="mm-time">${koDay(m)}</div><div class="mm-sub">${koClock(m)}</div>`;
-      }
-      games+=`<div class="mmatch">
-        <div class="mm-teams"><div class="mm-t ${w1?'mm-win':''}">${teamCell(m.team1)}</div><div class="mm-t ${w2?'mm-win':''}">${teamCell(m.team2)}</div></div>
-        <div class="mm-right">${right}</div>
-      </div>`;
+      games+=miniMatch(m,{date:true});
     });
     h+=`<h2 class="grp">${gname.replace("Group","Groep")}</h2>
       <div class="card scroll" style="padding:0;margin-bottom:8px">
@@ -491,7 +498,7 @@ function renderKO(){
       h+=`<div class="match"><div class="mt">
         <div class="mteam ${w1?'win':''}"><span>${teamCell(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
         <div class="mteam ${w2?'win':''}"><span>${teamCell(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
-        <div class="mmeta">${m.num?`Wedstrijd ${m.num} &middot; `:""}${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}</div>
+        <div class="mmeta">${m.num?`Wedstrijd ${m.num} &middot; `:""}${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}${loc(m)?` &middot; 📍 ${loc(m)}`:""}</div>
       </div></div>`;
     });
     h+=`</div>`;
