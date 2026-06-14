@@ -60,6 +60,8 @@
   .err{background:#FFF6E6;border:1px solid var(--gold);color:#7a5b00;border-radius:8px;padding:12px;font-size:13px;margin-bottom:14px}
   .owner{font-size:11px;color:var(--green);font-weight:700}
   .hide{display:none}
+  .bar{height:12px;background:var(--soft);border-radius:8px;overflow:hidden;margin-top:10px}
+  .barfill{height:100%;background:var(--green)}
 </style>
 </head>
 <body>
@@ -76,14 +78,16 @@
 
 <div class="wrap">
   <div class="tabs">
-    <button class="tab active" data-tab="klassement">Klassement</button>
+    <button class="tab active" data-tab="overzicht">Overzicht</button>
+    <button class="tab" data-tab="klassement">Klassement</button>
     <button class="tab" data-tab="stats">Stats</button>
     <button class="tab" data-tab="groepen">Groepsfase</button>
     <button class="tab" data-tab="ko">Knock-out</button>
   </div>
 
   <div id="msg"></div>
-  <section id="klassement"></section>
+  <section id="overzicht"></section>
+  <section id="klassement" class="hide"></section>
   <section id="stats" class="hide"></section>
   <section id="groepen" class="hide"></section>
   <section id="ko" class="hide"></section>
@@ -219,6 +223,53 @@ function scoreStr(m){
 
 // ---- Renderen ----
 function elPill(label,val,color){ return `<span class="pill" style="color:${color}"><span class="dot" style="background:${color}"></span>${val}<span style="color:var(--muted);font-weight:600">${label}</span></span>`; }
+
+// ---- Overzicht / dashboard ----
+function todayNL(){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Amsterdam",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+}
+function shiftYMD(ymd,days){
+  const d=new Date(ymd+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()+days); return d.toISOString().slice(0,10);
+}
+function dayLabel(ymd){
+  return new Date(ymd+"T12:00:00Z").toLocaleDateString("nl-NL",{day:"numeric",month:"short"});
+}
+function miniMatch(m){
+  const sc=scoreStr(m); const fin=m.score&&(m.score.et||m.score.ft);
+  return `<div class="match"><div class="mt">
+    <div class="mteam"><span>${ph(m.team1)}</span>${sc?`<span>${fin[0]}</span>`:""}</div>
+    <div class="mteam"><span>${ph(m.team2)}</span>${sc?`<span>${fin[1]}</span>`:""}</div>
+    <div class="mmeta">${sc?(m.score.p?`Penalty's ${m.score.p[0]}-${m.score.p[1]}`:"Gespeeld"):kickoff(m)}</div>
+  </div></div>`;
+}
+function renderOverzicht(){
+  const total=MATCHES.length;
+  const playedM=MATCHES.filter(m=>m.score&&m.score.ft);
+  const played=playedM.length;
+  const pct= total? Math.round(played/total*100):0;
+  let goals=0; playedM.forEach(m=>{ const f=m.score.et||m.score.ft; goals+=f[0]+f[1]; });
+  const R=ranked(); const lead=R[0];
+  const hasPts = lead && lead.sp>0;
+  const today=todayNL(), yest=shiftYMD(today,-1);
+  const yM=MATCHES.filter(m=>m.date===yest);
+  const tM=MATCHES.filter(m=>m.date===today);
+  const empty=`<div class="status" style="padding:14px">Geen wedstrijden.</div>`;
+  document.getElementById("overzicht").innerHTML=`
+    <div class="card">
+      <div style="font-weight:800;font-size:15px">Voortgang toernooi</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">${played} van ${total} wedstrijden gespeeld</div>
+      <div class="bar"><div class="barfill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="awards">
+      <div class="award"><div class="em">🏆</div><div class="t">Koploper</div><div class="n">${hasPts?lead.name:"nog niemand"}</div><div class="v">${hasPts?lead.pts+" ptn":"0 ptn"}</div></div>
+      <div class="award"><div class="em">⚽</div><div class="t">Doelpunten totaal</div><div class="n">${goals}</div><div class="v">in ${played} wedstr.</div></div>
+      <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
+    </div>
+    <h2 class="grp">Gisteren (${dayLabel(yest)})</h2>
+    <div class="card">${yM.length? yM.map(miniMatch).join(""): empty}</div>
+    <h2 class="grp">Vandaag (${dayLabel(today)})</h2>
+    <div class="card">${tM.length? tM.map(miniMatch).join(""): empty}</div>`;
+}
 
 function renderKlassement(){
   const R = ranked();
@@ -358,7 +409,7 @@ function renderKO(){
 }
 
 function renderAll(){
-  renderKlassement(); renderStats(); renderGroepen(); renderKO();
+  renderOverzicht(); renderKlassement(); renderStats(); renderGroepen(); renderKO();
   document.getElementById("footer").innerHTML =
     `Bron: openfootball (publiek domein), uitslagen binnen enkele uren na affluiten bijgewerkt.` +
     (lastLoaded?` Laatst geladen ${lastLoaded.toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.`:"");
@@ -385,7 +436,7 @@ async function load(){
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   t.classList.add("active");
-  ["klassement","stats","groepen","ko"].forEach(id=>document.getElementById(id).classList.add("hide"));
+  ["overzicht","klassement","stats","groepen","ko"].forEach(id=>document.getElementById(id).classList.add("hide"));
   document.getElementById(t.dataset.tab).classList.remove("hide");
 }));
 document.getElementById("refreshBtn").addEventListener("click",load);
