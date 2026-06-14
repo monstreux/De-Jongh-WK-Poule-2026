@@ -304,6 +304,9 @@ function koDate2(m){
 }
 function koClock(m){ const d=koDate2(m); return d? d.toLocaleTimeString("nl-NL",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}) : (m.time||""); }
 function koDay(m){ const d=koDate2(m); return d? d.toLocaleDateString("nl-NL",{timeZone:"Europe/Amsterdam",day:"numeric",month:"short"}) : (m.date||""); }
+// chronologisch sorteren op aftraptijd (val terug op datum, dan wedstrijdnummer)
+function koSortKey(m){ const d=koDate2(m); if(d) return d.getTime(); const t=new Date(`${m.date||"2099-01-01"}T00:00:00Z`).getTime(); return (isNaN(t)?9e15:t)+(m.num||0); }
+function byTime(a,b){ return koSortKey(a)-koSortKey(b); }
 // WK 2026 gaststeden -> land, voor de locatieregel bij een wedstrijd
 const STAD_LAND={"atlanta":"USA","boston":"USA","dallas":"USA","houston":"USA","kansas city":"USA","los angeles":"USA","miami":"USA","new york/new jersey":"USA","philadelphia":"USA","san francisco bay area":"USA","san francisco":"USA","seattle":"USA","toronto":"Canada","vancouver":"Canada","mexico city":"Mexico","guadalajara":"Mexico","monterrey":"Mexico"};
 function loc(m){
@@ -360,10 +363,18 @@ function renderOverzicht(){
   const R=ranked(); const lead=R[0];
   const hasPts = lead && lead.sp>0;
   const today=todayNL(), yest=shiftYMD(today,-1), tom=shiftYMD(today,1);
-  const gisterM=MATCHES.filter(m=>m.date===yest);
-  const vandaagM=MATCHES.filter(m=>m.date===today);
-  const morgenM=MATCHES.filter(m=>m.date===tom);
-  const empty=`<div class="status" style="padding:14px">Geen wedstrijden.</div>`;
+  const isPlayed=m=>!!(m.score&&m.score.ft);
+  const vToday=MATCHES.filter(m=>m.date===today&&!isPlayed(m)).sort(byTime);
+  const vTom  =MATCHES.filter(m=>m.date===tom  &&!isPlayed(m)).sort(byTime);
+  const tYest =MATCHES.filter(m=>m.date===yest &&isPlayed(m)).sort(byTime);
+  const tToday=MATCHES.filter(m=>m.date===today&&isPlayed(m)).sort(byTime);
+  const dayBlock=(label,ymd,arr)=> arr.length? `<div class="sub-day">${label} &middot; ${dayLabel(ymd)}</div>${arr.map(m=>miniMatch(m)).join("")}` : "";
+  const vooruitHTML = (vToday.length||vTom.length)
+    ? dayBlock("Vandaag",today,vToday)+dayBlock("Morgen",tom,vTom)
+    : `<div class="status" style="padding:14px">Geen komende wedstrijden vandaag of morgen.</div>`;
+  const terugHTML = (tYest.length||tToday.length)
+    ? dayBlock("Gisteren",yest,tYest)+dayBlock("Vandaag",today,tToday)
+    : `<div class="status" style="padding:14px">Nog geen gespeelde wedstrijden gisteren of vandaag.</div>`;
   const med=["🥇","🥈","🥉"];
   const podium = hasPts
     ? R.slice(0,3).map((p,i)=>`<div class="row podium g${i+1}"><div class="rank">${med[i]}</div><div class="who"><div class="name">${p.name}</div></div><div><div class="pts">${p.pts}</div><div class="ptslabel">PTN</div></div></div>`).join("")
@@ -386,19 +397,11 @@ function renderOverzicht(){
     </div>
     <div class="sect vooruit">
       <div class="sect-head">⏩ Vooruit</div>
-      <div class="card">
-        <div class="sub-day">Vandaag &middot; ${dayLabel(today)}</div>
-        ${vandaagM.length? vandaagM.map(m=>miniMatch(m)).join(""): empty}
-        <div class="sub-day">Morgen &middot; ${dayLabel(tom)}</div>
-        ${morgenM.length? morgenM.map(m=>miniMatch(m)).join(""): empty}
-      </div>
+      <div class="card">${vooruitHTML}</div>
     </div>
     <div class="sect terug">
       <div class="sect-head">⏪ Terug</div>
-      <div class="card">
-        <div class="sub-day">Gisteren &middot; ${dayLabel(yest)}</div>
-        ${gisterM.length? gisterM.map(m=>miniMatch(m)).join(""): empty}
-      </div>
+      <div class="card">${terugHTML}</div>
     </div>`;
 }
 
@@ -485,7 +488,7 @@ function renderGroepen(){
         <td>${t.sp}</td><td>${t.w}-${t.g}-${t.v}</td><td>${t.saldo>0?"+":""}${t.saldo}</td><td style="font-weight:800">${t.pts}</td></tr>`;
     });
     let games="";
-    MATCHES.filter(m=>m.group===gname).forEach(m=>{
+    MATCHES.filter(m=>m.group===gname).sort(byTime).forEach(m=>{
       games+=miniMatch(m,{date:true});
     });
     h+=`<h2 class="grp">${gname.replace("Group","Groep")}</h2>
@@ -517,7 +520,7 @@ function renderKO(){
   const labels={"Round of 32":"Achtste finales (laatste 32)","Round of 16":"Achtste finales (laatste 16)","Quarter-final":"Kwartfinales","Semi-final":"Halve finales","Match for third place":"Troostfinale","Final":"Finale"};
   let h="";
   order.forEach(r=>{
-    const ms=MATCHES.filter(m=>m.round===r);
+    const ms=MATCHES.filter(m=>m.round===r).sort(byTime);
     if(!ms.length) return;
     h+=`<div class="ko-round">${labels[r]||r}</div><div class="card">`;
     ms.forEach(m=>{ h+=miniMatch(m,{date:true,num:true}); });
