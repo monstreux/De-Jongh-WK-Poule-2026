@@ -265,6 +265,22 @@ function ranked(){
     .sort((a,b)=> b.pts-a.pts || b.w-a.w || b.saldo-a.saldo || a.name.localeCompare(b.name));
 }
 
+// ---- Ranglijst per land (punten, dan doelsaldo), met poule-eigenaar ----
+function landRanking(){
+  const all=[];
+  PARTICIPANTS.forEach(p=>p.lands.forEach(land=>{
+    let pts=0,gf=0,ga=0,sp=0;
+    MATCHES.forEach(m=>{
+      if(norm(m.team1)!==norm(land)&&norm(m.team2)!==norm(land)) return;
+      const o=outcome(m,land); if(!o) return;
+      sp++; gf+=o.gf; ga+=o.ga;
+      if(o.res==="W") pts+=winPoints(m); else if(o.res==="G") pts+=1;
+    });
+    all.push({land, owner:p.name, pts, saldo:gf-ga, sp});
+  }));
+  return all.sort((a,b)=> b.pts-a.pts || b.saldo-a.saldo || nl(a.land).localeCompare(nl(b.land)));
+}
+
 // ---- Kickoff naar NL-tijd ----
 function kickoff(m){
   const t = (m.time||"").match(/(\d{1,2}):(\d{2}).*UTC([+-]\d{1,2})/);
@@ -360,7 +376,10 @@ function renderOverzicht(){
   const played=playedM.length;
   const pct= total? Math.round(played/total*100):0;
   let goals=0; playedM.forEach(m=>{ const f=m.score.et||m.score.ft; goals+=f[0]+f[1]; });
+  const gem = played? (goals/played).toFixed(1).replace(".",",") : "0,0";
   const R=ranked(); const lead=R[0];
+  const ts = R.reduce((a,b)=> (b.top&&(!a||b.top.goals>(a.top?a.top.goals:0)))?b:a, null);
+  const top1 = landRanking()[0];
   const hasPts = lead && lead.sp>0;
   const today=todayNL(), yest=shiftYMD(today,-1), tom=shiftYMD(today,1);
   const isPlayed=m=>!!(m.score&&m.score.ft);
@@ -392,8 +411,13 @@ function renderOverzicht(){
     <h2 class="grp">Top 3</h2>
     ${podium}
     <div class="awards">
-      <div class="award"><div class="em">⚽</div><div class="t">Doelpunten totaal</div><div class="n">${goals}</div><div class="v">in ${played} wedstr.</div></div>
-      <div class="award"><div class="em">📅</div><div class="t">Gespeeld</div><div class="n">${played}/${total}</div><div class="v">${pct}%</div></div>
+      <div class="award"><div class="em">⚽</div><div class="t">Doelpunten</div><div class="n">${goals}</div><div class="v">${gem} per wedstrijd</div></div>
+      ${(played&&ts&&ts.top)
+        ? `<div class="award"><div class="em">🥅</div><div class="t">Topscorer</div><div class="n">${ts.top.name}</div><div class="v">${ts.top.goals} goals &middot; ${ts.name}</div></div>`
+        : `<div class="award"><div class="em">🥅</div><div class="t">Topscorer</div><div class="n">nog niemand</div><div class="v">geen goals</div></div>`}
+      ${(played&&top1&&top1.pts>0)
+        ? `<div class="award"><div class="em">🏅</div><div class="t">Land nr. 1</div><div class="n">${flag(top1.land)} ${nl(top1.land)}</div><div class="v">${top1.pts} ptn &middot; saldo ${top1.saldo>0?"+":""}${top1.saldo} &middot; ${top1.owner}</div></div>`
+        : `<div class="award"><div class="em">🏅</div><div class="t">Land nr. 1</div><div class="n">nog niemand</div><div class="v">geen punten</div></div>`}
     </div>
     <div class="sect vooruit">
       <div class="sect-head">⏩ Vooruit</div>
