@@ -103,6 +103,17 @@
   .sect.terug .sect-head{background:linear-gradient(90deg,#586660,#828F86)}
   .sect .card{margin-bottom:0;border-radius:0 0 14px 14px}
   .sub-day{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:9px 2px 2px}
+  .bracket{display:flex;align-items:stretch;gap:12px;overflow-x:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
+  .bcol{display:flex;flex-direction:column;min-width:92px;flex:0 0 auto}
+  .bcol-head{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);text-align:center;letter-spacing:.4px;margin-bottom:6px}
+  .bcol-body{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:6px}
+  .bm{background:var(--soft);border-radius:9px;padding:5px 8px}
+  .bm-t{display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:700;line-height:1.6}
+  .bm-t.bw{color:var(--green)}
+  .bm-t .dim{color:var(--muted);opacity:.55}
+  .bm-s{font-weight:800}
+  .bextra{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .bextra .bm{min-width:140px}
   .mm-right{flex:0 0 auto;text-align:right;min-width:64px}
   .mm-time{font-family:var(--display);font-size:23px;color:var(--orange);line-height:1}
   .mm-score{font-family:var(--display);font-size:24px;color:var(--green);line-height:1}
@@ -323,6 +334,37 @@ function koDay(m){ const d=koDate2(m); return d? d.toLocaleDateString("nl-NL",{t
 // chronologisch sorteren op aftraptijd (val terug op datum, dan wedstrijdnummer)
 function koSortKey(m){ const d=koDate2(m); if(d) return d.getTime(); const t=new Date(`${m.date||"2099-01-01"}T00:00:00Z`).getTime(); return (isNaN(t)?9e15:t)+(m.num||0); }
 function byTime(a,b){ return koSortKey(a)-koSortKey(b); }
+// ---- Compact toernooischema (mini-bracket) voor het dashboard ----
+function abbr(en){ return nl(en).slice(0,3).toUpperCase(); }
+function miniTeam(code){
+  const r=resolve(code);
+  if(r) return `<span>${flag(r)} ${abbr(r)}</span>`;
+  return `<span class="dim">·</span>`;
+}
+function bracketDuel(m){
+  const sc=scoreStr(m); const fin=m.score&&(m.score.et||m.score.ft);
+  let w1=false,w2=false;
+  if(m.score){ if(m.score.p){w1=m.score.p[0]>m.score.p[1];w2=!w1;} else if(fin){w1=fin[0]>fin[1];w2=fin[1]>fin[0];} }
+  return `<div class="bm">
+    <div class="bm-t ${w1?'bw':''}">${miniTeam(m.team1)}${sc?`<span class="bm-s">${fin[0]}</span>`:""}</div>
+    <div class="bm-t ${w2?'bw':''}">${miniTeam(m.team2)}${sc?`<span class="bm-s">${fin[1]}</span>`:""}</div>
+  </div>`;
+}
+function bracketHTML(){
+  const rounds=[["Round of 32","Laatste 32"],["Round of 16","Achtste"],["Quarter-final","Kwart"],["Semi-final","Halve"],["Final","Finale"]];
+  const ko=MATCHES.filter(m=>!m.group && m.round!=="Match for third place");
+  const anyKnown = ko.some(m=>resolve(m.team1)||resolve(m.team2)||(m.score&&(m.score.ft||m.score.et)));
+  if(!ko.length || !anyKnown) return "";
+  let cols="";
+  rounds.forEach(([r,label])=>{
+    const ms=MATCHES.filter(m=>m.round===r).sort((a,b)=>(a.num||0)-(b.num||0));
+    if(!ms.length) return;
+    cols+=`<div class="bcol"><div class="bcol-head">${label}</div><div class="bcol-body">${ms.map(bracketDuel).join("")}</div></div>`;
+  });
+  const tp=MATCHES.find(m=>m.round==="Match for third place");
+  const tpHTML = tp ? `<div class="bextra"><span class="bcol-head" style="margin:0">Troostfinale</span>${bracketDuel(tp)}</div>` : "";
+  return `<h2 class="grp">Toernooischema</h2><div class="bracket">${cols}</div>${tpHTML}`;
+}
 // WK 2026 gaststeden -> land, voor de locatieregel bij een wedstrijd
 const STAD_LAND={"atlanta":"USA","boston":"USA","dallas":"USA","houston":"USA","kansas city":"USA","los angeles":"USA","miami":"USA","new york/new jersey":"USA","philadelphia":"USA","san francisco bay area":"USA","san francisco":"USA","seattle":"USA","toronto":"Canada","vancouver":"Canada","mexico city":"Mexico","guadalajara":"Mexico","monterrey":"Mexico"};
 function loc(m){
@@ -419,6 +461,7 @@ function renderOverzicht(){
         ? `<div class="award"><div class="em">🏅</div><div class="t">Land nr. 1</div><div class="n">${flag(top1.land)} ${nl(top1.land)}</div><div class="v">${top1.pts} ptn &middot; saldo ${top1.saldo>0?"+":""}${top1.saldo} &middot; ${top1.owner}</div></div>`
         : `<div class="award"><div class="em">🏅</div><div class="t">Land nr. 1</div><div class="n">nog niemand</div><div class="v">geen punten</div></div>`}
     </div>
+    ${bracketHTML()}
     <div class="sect vooruit">
       <div class="sect-head">⏩ Vooruit</div>
       <div class="card">${vooruitHTML}</div>
