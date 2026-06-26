@@ -359,20 +359,46 @@ function bracketDuel(m){
   </div>`;
 }
 function bracketHTML(){
-  const rounds=[["Round of 32","Laatste 32"],["Round of 16","Achtste"],["Quarter-final","Kwart"],["Semi-final","Halve"],["Final","Finale"]];
+  const labels={"Round of 32":"Laatste 32","Round of 16":"Achtste","Quarter-final":"Kwart","Semi-final":"Halve","Final":"Finale"};
+  const seq=["Round of 32","Round of 16","Quarter-final","Semi-final","Final"];
   const ko=MATCHES.filter(m=>!m.group && m.round!=="Match for third place");
   const anyKnown = ko.some(m=>resolve(m.team1)||resolve(m.team2)||(m.score&&(m.score.ft||m.score.et)));
   if(!ko.length || !anyKnown) return "";
+  const ord=bracketRounds();
+  if(!ord) return "";
   let cols="";
-  rounds.forEach(([r,label])=>{
-    const ms=MATCHES.filter(m=>m.round===r).sort((a,b)=>(a.num||0)-(b.num||0));
+  seq.forEach(r=>{
+    const ms=ord[r]||[];
     if(!ms.length) return;
     const matches=ms.map(m=>`<div class="bmatch">${bracketDuel(m)}</div>`).join("");
-    cols+=`<div class="bround"><div class="bround-head">${label}</div><div class="bround-body">${matches}</div></div>`;
+    cols+=`<div class="bround"><div class="bround-head">${labels[r]}</div><div class="bround-body">${matches}</div></div>`;
   });
   const tp=MATCHES.find(m=>m.round==="Match for third place");
   const tpHTML = tp ? `<div class="bextra"><span class="bextra-l">Troostfinale</span>${bracketDuel(tp)}</div>` : "";
   return `<div class="sect schema"><div class="sect-head">🏆 Toernooischema</div><div class="card"><div class="bscroll"><div class="bracket">${cols}</div></div>${tpHTML}</div></div>`;
+}
+// Vaste bracket-koppelingen (welke wedstrijden samenkomen), als terugval wanneer de bron de Winnaar-verwijzing al door een land heeft vervangen
+const KO_FEEDERS={89:[74,77],90:[73,75],91:[76,78],92:[79,80],93:[83,84],94:[81,82],95:[86,88],96:[85,87],97:[89,90],98:[93,94],99:[91,92],100:[95,96],101:[97,98],102:[99,100]};
+function feedersOf(m){
+  if(!m) return null;
+  const ref=[m.team1,m.team2].map(t=>{const x=(t||"").match(/^W(\d+)$/);return x?+x[1]:null;});
+  if(ref[0]&&ref[1]) return ref;          // uit de Winnaar-wd-verwijzing
+  if(m.round==="Final") return [101,102];
+  return KO_FEEDERS[m.num]||null;          // terugval op vaste structuur
+}
+// volgorde per ronde, van boven naar beneden in de boom (top-down vanaf de finale)
+function bracketRounds(){
+  const byNum={}; MATCHES.forEach(m=>{ if(m.num!=null) byNum[m.num]=m; });
+  const finalM=MATCHES.find(m=>m.round==="Final");
+  if(!finalM) return null;
+  const seq=["Final","Semi-final","Quarter-final","Round of 16","Round of 32"];
+  const order={Final:[finalM]};
+  for(let i=1;i<seq.length;i++){
+    const cur=[];
+    order[seq[i-1]].forEach(m=>{ const f=feedersOf(m); if(f) f.forEach(n=>{ if(byNum[n]) cur.push(byNum[n]); }); });
+    order[seq[i]]=cur;
+  }
+  return order;
 }
 // WK 2026 gaststeden -> land, voor de locatieregel bij een wedstrijd
 const STAD_LAND={"atlanta":"USA","boston":"USA","dallas":"USA","houston":"USA","kansas city":"USA","los angeles":"USA","miami":"USA","new york/new jersey":"USA","philadelphia":"USA","san francisco bay area":"USA","san francisco":"USA","seattle":"USA","toronto":"Canada","vancouver":"Canada","mexico city":"Mexico","guadalajara":"Mexico","monterrey":"Mexico"};
