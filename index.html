@@ -524,9 +524,45 @@ function renderGroepen(){
   document.getElementById("groepen").innerHTML=h;
 }
 
+// ---- Bekende plekken zelf invullen (groepswinnaar, nr. 2, KO-winnaars) ----
+function groupByLetter(L){
+  const groups=[...new Set(MATCHES.filter(m=>m.group).map(m=>m.group))];
+  return groups.find(g=> g===L || g.endsWith(" "+L) || g.endsWith(L)) || ("Group "+L);
+}
+function groupComplete(gname){
+  const ms=MATCHES.filter(m=>m.group===gname);
+  if(!ms.length || !ms.every(m=>m.score&&m.score.ft)) return false;
+  const teams=new Set(); ms.forEach(m=>{teams.add(norm(m.team1));teams.add(norm(m.team2));});
+  const n=teams.size;
+  return n>=2 && ms.length>=n*(n-1)/2;   // elk team heeft tegen elk ander gespeeld
+}
+function isReal(code){ return LAND[code]!==undefined || OWNER[norm(code)]!==undefined; }
+function koResultTeam(num,which){
+  const mt=MATCHES.find(x=>x.num===num); if(!mt) return null;
+  const s=mt.score; if(!s||!(s.ft||s.et)) return null;
+  const t1=resolve(mt.team1)||mt.team1, t2=resolve(mt.team2)||mt.team2;
+  const fin=s.et||s.ft;
+  const winT1 = s.p ? s.p[0]>s.p[1] : fin[0]>fin[1];
+  const r = (which==="W") ? (winT1?t1:t2) : (winT1?t2:t1);
+  return isReal(r)? r : null;
+}
+function resolve(code){
+  if(isReal(code)) return code;            // al een echt land
+  let m;
+  if(m=code.match(/^([12])([A-L])$/)){     // groepswinnaar of nr. 2
+    const g=groupByLetter(m[2]);
+    if(groupComplete(g)){ const st=groupStanding(g), idx=+m[1]-1; if(st[idx]) return st[idx].team; }
+    return null;
+  }
+  if(m=code.match(/^W(\d+)$/)) return koResultTeam(+m[1],"W");
+  if(m=code.match(/^L(\d+)$/)) return koResultTeam(+m[1],"L");
+  return null;                              // nr. 3-plekken: pas na hele groepsfase bekend
+}
+
 // placeholder -> leesbaar
 function ph(code){
-  if(LAND[code]!==undefined || OWNER[norm(code)]!==undefined) return `${flag(code)} ${nl(code)}`;
+  const r=resolve(code);
+  if(r) return `${flag(r)} ${nl(r)}`;
   let m;
   if(m=code.match(/^([123])([A-L])$/)){ const o={1:"Winnaar",2:"Nr. 2",3:"Nr. 3"}; return `${o[m[1]]} groep ${m[2]}`; }
   if(m=code.match(/^3([A-L/]+)$/)) return `Nr. 3 (${m[1]})`;
@@ -536,7 +572,8 @@ function ph(code){
 }
 // land plus poule-eigenaar (Gap, Lia, ...) voor weergave bij wedstrijden
 function teamCell(code){
-  const own=OWNER[norm(code)];
+  const r=resolve(code)||code;
+  const own=OWNER[norm(r)];
   return `${ph(code)}${own?` <span class="owner">${own}</span>`:""}`;
 }
 function renderKO(){
