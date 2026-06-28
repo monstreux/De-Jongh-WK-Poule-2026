@@ -106,14 +106,17 @@
   .sect.schema .sect-head{background:linear-gradient(90deg,#3F37A6,#6E66D6)}
   .bscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
   .bracket{display:flex;align-items:stretch;min-width:max-content;padding:2px 0}
-  .bround{display:flex;flex-direction:column;width:104px;flex:0 0 auto}
+  .bround{display:flex;flex-direction:column;width:124px;flex:0 0 auto}
   .bround:not(:last-child){margin-right:22px}
   .bround-head{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px;letter-spacing:.4px}
   .bround-body{flex:1;display:flex;flex-direction:column}
   .bmatch{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative}
   .bm{background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:5px 7px}
-  .bm-t{display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:700;line-height:1.7}
+  .bm-t{display:flex;justify-content:space-between;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:700;line-height:1.7}
+  .bm-team{overflow:hidden;text-overflow:ellipsis}
+  .bm-own{font-size:10px;color:var(--muted);font-weight:800}
   .bm-t.bw{color:var(--green)}
+  .bm-t.bw .bm-own{color:var(--green);opacity:.75}
   .bm-t .dim{color:var(--muted);opacity:.5}
   .bm-s{font-weight:800}
   .bround:not(:last-child) .bm::after{content:"";position:absolute;top:50%;left:100%;width:11px;height:2px;background:#C7BFAE}
@@ -344,9 +347,11 @@ function koSortKey(m){ const d=koDate2(m); if(d) return d.getTime(); const t=new
 function byTime(a,b){ return koSortKey(a)-koSortKey(b); }
 // ---- Compact toernooischema (mini-bracket) voor het dashboard ----
 function abbr(en){ return nl(en).slice(0,3).toUpperCase(); }
+const OWNER_ABBR={"Shirley":"SHIR","Anouk":"ANOU","Lia":"LIA","Bas W":"BASW","Bas VS":"BASV","Gap":"GAP","Steef":"STEF","Brigitte":"BRIG"};
+function ownerAbbr(name){ return OWNER_ABBR[name] || name.replace(/[^a-z]/gi,"").slice(0,4).toUpperCase(); }
 function miniTeam(code){
   const r=resolve(code);
-  if(r) return `<span>${flag(r)} ${abbr(r)}</span>`;
+  if(r){ const own=OWNER[norm(r)]; return `${flag(r)} ${abbr(r)}${own?` <span class="bm-own">${ownerAbbr(own)}</span>`:""}`; }
   return `<span class="dim">·</span>`;
 }
 function bracketDuel(m){
@@ -354,8 +359,8 @@ function bracketDuel(m){
   let w1=false,w2=false;
   if(m.score){ if(m.score.p){w1=m.score.p[0]>m.score.p[1];w2=!w1;} else if(fin){w1=fin[0]>fin[1];w2=fin[1]>fin[0];} }
   return `<div class="bm">
-    <div class="bm-t ${w1?'bw':''}">${miniTeam(m.team1)}${sc?`<span class="bm-s">${fin[0]}</span>`:""}</div>
-    <div class="bm-t ${w2?'bw':''}">${miniTeam(m.team2)}${sc?`<span class="bm-s">${fin[1]}</span>`:""}</div>
+    <div class="bm-t ${w1?'bw':''}"><span class="bm-team">${miniTeam(m.team1)}</span>${sc?`<span class="bm-s">${fin[0]}</span>`:""}</div>
+    <div class="bm-t ${w2?'bw':''}"><span class="bm-team">${miniTeam(m.team2)}</span>${sc?`<span class="bm-s">${fin[1]}</span>`:""}</div>
   </div>`;
 }
 function bracketHTML(){
