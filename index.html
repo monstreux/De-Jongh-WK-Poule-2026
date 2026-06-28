@@ -615,6 +615,8 @@ function groupComplete(gname){
   return n>=2 && ms.length>=n*(n-1)/2;   // elk team heeft tegen elk ander gespeeld
 }
 function isReal(code){ return LAND[code]!==undefined || OWNER[norm(code)]!==undefined; }
+// Welke nummer 3 op welke laatste-32-plek komt: per plekhouder de bron-groep, vastgelegd uit de definitieve bracket
+const THIRD_SLOT={"3A/B/C/D/F":"D","3C/D/F/G/H":"F","3C/E/F/H/I":"E","3E/H/I/J/K":"K","3B/E/F/I/J":"B","3A/E/H/I/J":"I","3E/F/G/I/J":"J","3D/E/I/J/L":"L"};
 function koResultTeam(num,which){
   const mt=MATCHES.find(x=>x.num===num); if(!mt) return null;
   const s=mt.score; if(!s||!(s.ft||s.et)) return null;
@@ -632,9 +634,14 @@ function resolve(code){
     if(groupComplete(g)){ const st=groupStanding(g), idx=+m[1]-1; if(st[idx]) return st[idx].team; }
     return null;
   }
+  if(THIRD_SLOT[code]){                     // nr. 3-plek: groep vastgelegd uit definitieve bracket, land uit de eindstand
+    const g=groupByLetter(THIRD_SLOT[code]);
+    if(groupComplete(g)){ const st=groupStanding(g); if(st[2]) return st[2].team; }
+    return null;
+  }
   if(m=code.match(/^W(\d+)$/)) return koResultTeam(+m[1],"W");
   if(m=code.match(/^L(\d+)$/)) return koResultTeam(+m[1],"L");
-  return null;                              // nr. 3-plekken: pas na hele groepsfase bekend
+  return null;                              // onbekende plekhouder
 }
 
 // placeholder -> leesbaar
