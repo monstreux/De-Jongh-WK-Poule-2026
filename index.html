@@ -181,8 +181,8 @@
 <script>
 // ---- Bronnen (keyloos, publiek domein). Mirror eerst, officieel als reserve. ----
 const SOURCES = [
-  "https://raw.githubusercontent.com/upbound-web/worldcup-live.json/master/2026/worldcup.json",
-  "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
+  {url:"https://raw.githubusercontent.com/upbound-web/worldcup-live.json/master/2026/worldcup.json", name:"upbound (snel)"},
+  {url:"https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json", name:"openfootball"}
 ];
 
 // ---- Deelnemers (landen in feed-spelling) ----
@@ -225,6 +225,8 @@ PARTICIPANTS.forEach(p=>p.lands.forEach(l=>OWNER[norm(l)]=p.name));
 
 let MATCHES = [];
 let lastLoaded = null;
+let loadedSource = null;
+let loadedPlayed = 0;
 
 // ---- Uitslag bepalen voor een team in een match ----
 function outcome(m, teamEN){
@@ -683,25 +685,40 @@ function renderKO(){
 function renderAll(){
   renderOverzicht(); renderKlassement(); renderStats(); renderGroepen(); renderKO();
   document.getElementById("footer").innerHTML =
-    `Bron: openfootball (publiek domein), uitslagen binnen enkele uren na affluiten bijgewerkt.` +
+    `Bron: ${loadedSource||"openfootball"} (publiek domein), ${loadedPlayed} wedstrijden met uitslag.` +
     (lastLoaded?` Laatst geladen ${lastLoaded.toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.`:"");
 }
 
+function playedCount(matches){
+  let n=0;
+  for(const m of (matches||[])){ if(m.score && (m.score.ft||m.score.et)) n++; }
+  return n;
+}
 async function load(){
   document.getElementById("msg").innerHTML="";
-  for(const src of SOURCES){
+  const results=[];
+  await Promise.all(SOURCES.map(async (s,i)=>{
     try{
-      const r=await fetch(src,{cache:"no-store"});
-      if(!r.ok) continue;
+      const r=await fetch(s.url,{cache:"no-store"});
+      if(!r.ok) return;
       const data=await r.json();
-      MATCHES=data.matches||[];
-      lastLoaded=new Date();
-      renderAll();
-      return;
-    }catch(e){ /* volgende bron */ }
+      const matches=data.matches||[];
+      if(matches.length) results.push({name:s.name, matches, played:playedCount(matches), order:i});
+    }catch(e){ /* bron faalt, overslaan */ }
+  }));
+  if(!results.length){
+    document.getElementById("msg").innerHTML=
+      `<div class="err">De live data kon nu niet geladen worden. In de preview binnen Claude blokkeert de omgeving soms externe data. Zodra deze pagina op Vercel staat, werkt de live stand normaal. Druk anders op Ververs.</div>`;
+    return;
   }
-  document.getElementById("msg").innerHTML=
-    `<div class="err">De live data kon nu niet geladen worden. In de preview binnen Claude blokkeert de omgeving soms externe data. Zodra deze pagina op Vercel staat, werkt de live stand normaal. Druk anders op Ververs.</div>`;
+  // kies de meest actuele bron: meeste wedstrijden met uitslag, bij gelijk de eerste op volgorde
+  results.sort((a,b)=> b.played-a.played || a.order-b.order);
+  const best=results[0];
+  MATCHES=best.matches;
+  loadedSource=best.name;
+  loadedPlayed=best.played;
+  lastLoaded=new Date();
+  renderAll();
 }
 
 // tabs
